@@ -1,6 +1,3 @@
-# BridgeHackathon
-shared code for hackathon
-
 # here's where I say parsed a lot
 Parserr.py is the file that parses the ppt files.  
 To troubleshoot the parserr.py file, you can execute the preview_parsed_ppts.py file.  This will populate the parsed_data.json file with the parsed data.
