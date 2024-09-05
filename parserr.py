@@ -19,9 +19,7 @@ def convert_state_names_to_abbr(text: str) -> str:
     """
     Convert full state names in the text to their corresponding two-letter abbreviations.
     """
-    # Replace full state names with their abbreviations using the state_abbr dictionary
     for full_name, abbr in state_abbr.items():
-        # Using word boundaries (\b) to ensure whole word matching
         text = re.sub(r'\b' + re.escape(full_name) + r'\b', abbr, text)
     return text
 
@@ -29,53 +27,56 @@ def clean_text(text: str) -> str:
     """
     Clean extracted text by removing unwanted characters, fixing common OCR errors, and trimming spaces.
     """
-    text = text.replace('\u000b', ' ').replace('\n', ' ').replace('  ', ' ').strip()
-    text = re.sub(r'\s+', ' ', text)  # Remove any extra spaces
+    text = re.sub(r'[\u000b\n]+', ' ', text)  # Replace unwanted characters with space
+    text = re.sub(r'\s+', ' ', text).strip()  # Remove extra spaces and trim
     return text
 
-def parse_slide(slide_data: Dict[str, Any]) -> Dict[str, Any]:
+def extract_fields(cleaned_text: str) -> Dict[str, Any]:
     """
-    Parse data from a slide and extract relevant fields such as name, title, email, etc.
+    Extract relevant fields such as name, title, email, mobile, and location from cleaned text.
     """
-    raw_text = slide_data.get('raw_data', '')
-    cleaned_text = clean_text(raw_text)
-    
-    # Convert full state names to abbreviations
-    cleaned_text = convert_state_names_to_abbr(cleaned_text)
+    # Define regex patterns for extracting relevant information
+    name_pattern = r'\b[A-Z][a-z]+\s[A-Z][a-z]+\b'
+    title_pattern = r'\b(Sr\. Consultant|Data Engineer|Sr\. Manager|Consultant|Manager)\b'
+    email_pattern = r'[\w\.-]+@[\w\.-]+'
+    mobile_pattern = r'\(\d{3}\) \d{3}-\d{4}'
+    location_pattern = r'([A-Za-z ]+),\s?([A-Z]{2})'
 
-    # Extract fields using refined regex patterns
-    name_match = re.search(r'\b[A-Z][a-z]+\s[A-Z][a-z]+\b', cleaned_text)
-    title_match = re.search(r'(Sr\. Consultant|Data Engineer|Sr\. Manager)', cleaned_text)
-    email_match = re.search(r'[\w\.-]+@[\w\.-]+', cleaned_text)
-    mobile_match = re.search(r'\(\d{3}\) \d{3}-\d{4}', cleaned_text)
-    
-    # Location regex pattern for "City, ST"
-    location_match = re.search(r'\n+ ([^,]+), ([A-Z]{2}) ?', cleaned_text)
-
-    # Extract text after the title and before the next field
-    title_index = cleaned_text.find(title_match.group()) if title_match else 0
-    end_of_data_index = len(cleaned_text)
-    
-    if email_match:
-        end_of_data_index = email_match.start()
-    elif mobile_match:
-        end_of_data_index = mobile_match.start()
-    elif location_match:
-        end_of_data_index = location_match.start()
-
-    # Extract data text after title and before the next identifiable field
-    data_text = cleaned_text[title_index + len(title_match.group()):end_of_data_index].strip() if title_match else ''
+    # Search for matches in the cleaned text
+    name_match = re.search(name_pattern, cleaned_text)
+    title_match = re.search(title_pattern, cleaned_text)
+    email_match = re.search(email_pattern, cleaned_text)
+    mobile_match = re.search(mobile_pattern, cleaned_text)
+    location_match = re.search(location_pattern, cleaned_text)
 
     parsed_data = {
         'name': name_match.group() if name_match else '',
         'title': title_match.group() if title_match else '',
         'email': email_match.group() if email_match else '',
         'mobile': mobile_match.group() if mobile_match else '',
-        'location': f"{location_match.group(1)}, {location_match.group(2)}" if location_match else '',  # Correctly capture the location
-        'data': clean_text(data_text)  # Clean the rest of the data
+        'location': f"{location_match.group(1)}, {location_match.group(2)}" if location_match else ''
     }
-    
+
     return parsed_data
+
+def parse_slide(slide_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Parse data from a slide and extract relevant fields.
+    """
+    raw_text = slide_data.get('raw_data', '')
+    cleaned_text = clean_text(raw_text)
+    cleaned_text = convert_state_names_to_abbr(cleaned_text)
+    extracted_fields = extract_fields(cleaned_text)
+
+    # Extract additional text data after the title
+    if extracted_fields['title']:
+        title_index = cleaned_text.find(extracted_fields['title'])
+        data_text = cleaned_text[title_index + len(extracted_fields['title']):].strip()
+        extracted_fields['data'] = clean_text(data_text)
+    else:
+        extracted_fields['data'] = ''
+
+    return extracted_fields
 
 def parse_presentation(file_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
