@@ -9,6 +9,7 @@ In the root of the project are 3 files:
 Running `python api.py` will start a Flask API on localhost:5000, containing a single POST route on `/search`. This endpoint takes a JSON payload with the shape `{"skills": "search terms here"}` and responds with the GPT-generated consultant recommendations in the shape `{"recommendations": "Here are the top 3 consultants who best fit the skill..."}`.
 
 an example api call for postman would be (after the app is running): 
+
 curl --location 'http://localhost:5000/search' \
 --header 'Content-Type: application/json' \
 --data '{"skills": "change management"}'
