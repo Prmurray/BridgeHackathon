@@ -8,6 +8,9 @@ In the root of the project are 3 files:
 
 Running `python api.py` will start a Flask API on localhost:5000, containing a single POST route on `/search`. This endpoint takes a JSON payload with the shape `{"skills": "search terms here"}` and responds with the GPT-generated consultant recommendations in the shape `{"recommendations": "Here are the top 3 consultants who best fit the skill..."}`.
 
+### REACH OUT TO WES OR PATRICK FOR OPENAI TOKEN AND AZURE DB PASSWORD
+these will be added to the config.py file
+
 ### DB update (by patrick)
 when executed, the parse_profiles file will load all of the files from the profiles/ directory into the consultants table in azure db.
 then when the gpt.py file gets executed, it will query the database for profile data.
