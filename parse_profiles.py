@@ -1,7 +1,30 @@
+# load_profiles.py
 from pptx import Presentation
 from pathlib import Path
 import re
+from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData
+from sqlalchemy.orm import sessionmaker
+from config import get_db_connection_string  # Use the config file for DB connection
 
+# Set up Azure SQL connection using SQLAlchemy
+DATABASE_URL = get_db_connection_string()
+engine = create_engine(DATABASE_URL)
+Session = sessionmaker(bind=engine)
+session = Session()
+
+metadata = MetaData()
+
+# Define the consultants table
+consultants_table = Table(
+    'consultants', metadata,
+    Column('id', Integer, primary_key=True),
+    Column('name', String(255)),
+    Column('profile_text', String)
+)
+
+metadata.create_all(engine)
+
+# Directory containing PowerPoint profiles
 directory = Path('./profiles/')
 
 def clean_text(text: str) -> str:
@@ -33,8 +56,7 @@ def extract_text_from_pptx(pptx_path):
     
     return "\n".join(text_runs)
 
-def get_profiles():
-    consultant_profiles = ""
+def load_profiles_to_database():
     files = directory.iterdir()
 
     for file in files:
@@ -45,8 +67,12 @@ def get_profiles():
         raw_text = extract_text_from_pptx(file)
         cleaned_text = raw_text.replace("\n", " ").replace("\t", " ").strip()  # Basic cleaning
 
-        # Store profile data
-        
-        consultant_profiles += f"name: {consultant_name}\n profile_text: {cleaned_text}\n\n"
+        # Insert profile data into the database
+        insert_query = consultants_table.insert().values(name=consultant_name, profile_text=cleaned_text)
+        session.execute(insert_query)
+    
+    session.commit()
 
-    return consultant_profiles
+if __name__ == "__main__":
+    load_profiles_to_database()
+    print("Profiles have been loaded into the database.")
