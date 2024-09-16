@@ -8,8 +8,12 @@ In the root of the project are 3 files:
 
 Running `python api.py` will start a Flask API on localhost:5000, containing a single POST route on `/search`. This endpoint takes a JSON payload with the shape `{"skills": "search terms here"}` and responds with the GPT-generated consultant recommendations in the shape `{"recommendations": "Here are the top 3 consultants who best fit the skill..."}`.
 
-### Things to be improved
-The consultant profiles are being parsed and loaded into the prompt context fresh with each request. While this allows us to ensure that the response has the most up-to-date content from the files, it is significantly slowing down the response. Merging Patrick's DB-loading and querying from the DB would definitely be a better long-term solution; unfortunately Wes is out of time.
+### DB update (by patrick)
+when executed, the parse_profiles file will load all of the files from the profiles/ directory into the consultants table in azure db.
+then when the gpt.py file gets executed, it will query the database for profile data.
+
+### considerations (by patrick)
+Although this will most likely speed up the process a bit, I think we will still run into a lag because of the database connection every time.  I think using Azure's "Data API Builder" as an intermediate might be helpful.  I was learning about it at a sql conference, but haven't directly worked with it.  I think it needs to be using docker, which is how azure web apps are created, so it would be a v2 situation.
 
 ## here's where I say parsed a lot
 Parserr.py is the file that parses the ppt files.  
