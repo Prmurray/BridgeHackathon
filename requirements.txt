@@ -1,4 +1,8 @@
 python-pptx
-sqlite3
 nltk
 spacy
+flask
+openai
+pathlib
+sqlalchemy
+pyodbc
